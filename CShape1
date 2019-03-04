@@ -1,0 +1,451 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.IO;
+using System.Windows.Forms.DataVisualization.Charting;
+
+namespace SRAM_Laser
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        static List<int> LaserNum = new List<int>(); //记录激光脉冲数目
+        static List<string> LaserChanged = new List<string>();//记录改变情况
+
+
+        private void plot()
+        {
+            chart1.Visible = true;
+            chart1.Location = new Point(256, 72);
+            chart1.Width = int.Parse(txt_Width.Text);
+            chart1.Height = int.Parse(txt_Height.Text);
+
+            //脉冲数目作为坐标轴
+            int x_laser_num = int.Parse(txt_X.Text) / int.Parse(txt_SX.Text) + 1;
+            int y_laser_num = int.Parse(txt_Y.Text) / int.Parse(txt_SY.Text) + 1;
+            int x_step = int.Parse(txt_SX.Text);
+            int y_step = int.Parse(txt_SY.Text);
+
+            //获取扫描点的具体坐标
+            foreach (var a in LaserNum)
+            {
+                for (int i = 1; i <= x_laser_num; i++)
+                {
+                    if (a > (i - 1) * y_laser_num && a <= i * y_laser_num)
+                    {
+
+                        x.Add((i - 1) * x_step + int.Parse(txt_signal.Text));
+
+                    }
+                }
+            }
+            if(radioButton3.Checked)
+            {
+                foreach (var a in LaserNum)
+                {
+                    for (int i = 1; i <= x_laser_num; i++)
+                    {
+                        if (a > (i - 1) * y_laser_num && a <= i * y_laser_num)
+                        {
+                            if ((i % 2).Equals(1))
+                            {
+                                y.Add((a - (i - 1) * y_laser_num) * y_step);
+
+                            }
+                            else
+                            {
+                                y.Add((y_laser_num - (a - (i - 1) * y_laser_num)) * y_step);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (radioButton4.Checked)
+            {
+                foreach (var a in LaserNum)
+                {
+                    for (int i = 1; i <= x_laser_num; i++)
+                    {
+                        if (a > (i - 1) * y_laser_num && a <= i * y_laser_num)
+                        {
+                            if ((i % 2).Equals(0))
+                            {
+                                y.Add((a - (i - 1) * y_laser_num) * y_step);
+
+                            }
+                            else
+                            {
+                                y.Add((y_laser_num - (a - (i - 1) * y_laser_num)) * y_step);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            //for(int i=254;i<y.Count;i++)
+            //{
+            //    y[i] = 2004 - y[i];
+            //}
+
+            //x.Add(2);
+            //y.Add(250);
+            //Console.WriteLine(LaserNum.Count);
+            //Console.WriteLine(x.Count);
+            //Console.WriteLine(y.Count);
+
+
+            //for(int i=0;i<x.Count;i++)
+            //{
+            //    Console.WriteLine(x[i]+","+y[i]);
+            //}
+
+
+            int stepy = 0;
+            int stepx = 0;
+            if (txt_stepy.Text.Equals("0") || txt_stepy.Text == "")
+            {
+                stepy = y_step;
+            }
+            else
+            {
+                stepy = int.Parse(txt_stepy.Text);
+            }
+            if (txt_stepx.Text.Equals("0") || txt_stepx.Text == "")
+            {
+                stepx = y_step;
+            }
+            else
+            {
+                stepx = int.Parse(txt_stepx.Text);
+            }
+
+            //设定绘图格式
+            {
+                //chart1.Titles.Add("a little test");
+                chart1.BackColor = Color.White;
+                //chart1.Series[0].Label = "#VAL";//设置显示数据大小
+
+                chart1.ChartAreas[0].BackColor = Color.White;
+                //chart1.ChartAreas[0].BorderColor = Color.Blue;
+                chart1.ChartAreas[0].AxisX.Title = "X";//设置横坐标的标题
+                chart1.ChartAreas[0].AxisY.Title = "Y";//设置纵坐标的标题
+                chart1.ChartAreas[0].AxisY.TitleFont = new Font("微软雅黑", 12);
+                chart1.ChartAreas[0].AxisX.TitleFont = new Font("微软雅黑", 12);//坐标轴标题的字体设置
+                                                                            //chart1.ChartAreas[0].AxisX.IntervalAutoMode = IntervalAutoMode.VariableCount;//x轴标签数目可变显示
+                chart1.ChartAreas[0].AxisX.MajorGrid.LineDashStyle = ChartDashStyle.Dash;
+                chart1.ChartAreas[0].AxisY.MajorGrid.LineDashStyle = ChartDashStyle.Dash;
+                chart1.ChartAreas[0].AxisX.MajorGrid.LineColor = Color.Gray;
+                chart1.ChartAreas[0].AxisY.MajorGrid.LineColor = Color.Gray;
+                //chart1.ChartAreas[0].AxisX.MajorGrid.Enabled = false;//关闭横向网格线
+                //chart1.ChartAreas[0].AxisY.MajorGrid.Enabled = false;//关闭纵向网格线
+                chart1.ChartAreas[0].AxisX.LabelStyle.Angle = 90;
+                //chart1.ChartAreas[0].AxisY.LabelStyle.Angle = 90;
+                chart1.ChartAreas[0].AxisX.Minimum = 0;
+                chart1.ChartAreas[0].AxisX.Maximum = int.Parse(txt_X.Text) + x_step;
+                chart1.ChartAreas[0].AxisY.Minimum = 0;
+                chart1.ChartAreas[0].AxisY.Maximum = int.Parse(txt_Y.Text) + y_step;
+                chart1.ChartAreas[0].AxisX.ArrowStyle = AxisArrowStyle.Triangle;//X轴的箭头
+                chart1.ChartAreas[0].AxisY.ArrowStyle = AxisArrowStyle.Triangle;
+                //chart1.ChartAreas[0].AxisX.LabelStyle.IsStaggered = true;//标签的偏移量
+                chart1.ChartAreas[0].AxisX.Interval = stepx;//设置横坐标间距
+                chart1.ChartAreas[0].AxisY.Interval = stepy;//设置纵坐标间距
+
+
+
+                //chart1.Series[0].IsValueShownAsLabel = true;//是否显示数据值
+                chart1.Series[0].Color = Color.Black;
+                chart1.Series[0].MarkerSize = 3;
+                chart1.Series[0].IsVisibleInLegend = false;//不显示图例
+                chart1.Series[0].Name = "数据";
+                chart1.Series[0].ChartType = SeriesChartType.Point;//点图
+
+                chart1.Series[0].Points.DataBindXY(x, y);//绑定数据
+            }
+            
+            var mark = new Function();
+            int s_num=0, t_num=0;
+            Color[] color = { Color.Red, Color.Orange, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Violet,Color.LightBlue};
+            for (int i=0;i<LaserChanged.Count;i++)
+            {
+                if (mark.hexToDec(LaserChanged[i]) >= 0x0 && mark.hexToDec(LaserChanged[i]) <=0xff)
+                {
+                    //chart1.Series[0].Points[i].Color = Color.Blue;
+                    t_num++;
+                }
+                else if (mark.hexToDec(LaserChanged[i]) >= 0x100 && mark.hexToDec(LaserChanged[i]) <= 0x1ff)
+                {
+                    //chart1.Series[0].Points[i].Color = Color.Red;
+                    s_num++;
+                }
+
+                //for (int j = 0; j < 8; j++)
+                //{
+                //    if (mark.hexToDec(LaserChanged[i]) >= j * 32 && mark.hexToDec(LaserChanged[i]) < (j + 1) * 32)
+                //    {
+                //        chart1.Series[0].Points[i].Color = color[j];
+                //    }
+                //    //if (mark.hexToDec(LaserChanged[i]) == j + 256)
+                //    //{
+                //    //    chart1.Series[0].Points[i].Color = color[j];
+                //    //}
+                //}
+
+
+            }
+            //chart1.Series[0].Palette = ChartColorPalette.BrightPastel;调色板
+
+            tst1.Text = x.Count+" Poionts: "+s_num+" Sbox, "+t_num+" InvSbox";
+
+        }
+        private void btn_Open_Click(object sender, EventArgs e)
+        {
+            tst1.Text = null;
+            var od = new OpenFileDialog();
+            od.Filter = "文本文件(*.txt)|*.txt";
+            od.Multiselect = false;
+            //od.ShowDialog();
+            if(od.ShowDialog()==DialogResult.OK)
+            {
+                txt_File.Text = od.FileName;
+                var reader = new StreamReader(od.FileName);
+                int i = 0;
+                string str = null;
+                string row = null;
+                var lint = new List<int>();
+                lint.Add(0);
+                int lis = 0;
+                while (!reader.EndOfStream)
+                {
+                    str = "Lazer:" + i;
+                    row = reader.ReadLine();
+                    if (str.Equals(row))
+                    {
+                        var list_str = new List<string>();
+                        while((!reader.EndOfStream && !(row = reader.ReadLine()).Equals("")))
+                        {
+                            list_str.Add(row);
+                            lis++;
+                        }
+                        lint.Add(lis);
+                        lis = 0;
+                        if((lint[lint.Count-1]- lint[lint.Count - 2])<10&&list_str.Count<200)
+                        {
+                            for(int j=1;j<list_str.Count;j++)
+                            {
+                                if (list_str[j].Length<30&&!LaserChanged.Contains(list_str[j].Remove(0, 14)))
+                                {
+                                    LaserChanged.Add(list_str[j].Remove(0,14));
+                                    LaserNum.Add(i);
+                                    //Console.WriteLine(list_str[j].Remove(0, 14));
+                                }
+                            }
+                        }
+
+                        i++;
+                    }
+                }
+                reader.Close();
+                tst1.Text = "OjbK!";
+            }
+
+            //foreach (var a in LaserNum)
+            //{
+            //    Console.WriteLine(a);
+            //}
+            //Console.WriteLine(LaserNum.Count);
+            //Console.WriteLine(LaserChanged.Count);
+
+            //foreach (var a in LaserChanged)
+            //{
+            //    Console.WriteLine(a + " ");
+            //}
+        }
+
+        static List<int> x = new List<int>();
+        static List<int> y = new List<int>();
+
+        private void btn_Plot_Click(object sender, EventArgs e)
+        {
+
+            x.Clear();
+            y.Clear();
+
+            plot();
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.Close();
+            //Application.Exit();
+            //int a = 0x25f - 0x60;
+            //MessageBox.Show(a.ToString());
+        }
+
+        private void btn_notes_Click(object sender, EventArgs e)
+        {
+
+
+            //添加地址&详情的说明
+            if (btn_notes.Text.Equals("Show"))
+            {
+                for (int i = 0; i < LaserChanged.Count; i++)
+                {
+                    btn_notes.Text = "Clear";
+                    var aa = new TextAnnotation();
+                    //an.Add(aa);
+                    aa.Text = LaserChanged[i];
+                    aa.ForeColor = Color.Black;
+                    aa.Font = new Font("微软雅黑", 8);
+                    //aa.ResizeToContent();
+                    aa.AnchorDataPoint = this.chart1.Series[0].Points[i];
+                    chart1.Annotations.Add(aa);
+                }
+            }
+            else
+            {
+                btn_notes.Text = "Show";
+                chart1.Annotations.Clear();
+            }
+        }
+
+        private void btn_save_Click(object sender, EventArgs e)
+        {
+            //var sf = new SaveFileDialog();
+            //sf.Filter = "文本文件|*.txt";
+            //sf.ShowDialog();
+
+            var rs = new StreamWriter("F:\\工作、学习文件夹\\Desk\\test.txt", false);
+            for(int i=0;i<x.Count;i++)
+            {
+                rs.WriteLine(i);
+                rs.WriteLine(x[i]);
+                rs.WriteLine(y[i]);
+                rs.WriteLine(LaserChanged[i]);
+            }
+            rs.Close();
+            MessageBox.Show("OjbK!");
+        }
+
+        private void btn_all_Click(object sender, EventArgs e)
+        {
+            var of = new OpenFileDialog();
+            of.Filter= "文本文件|*.txt";
+            of.ShowDialog();
+
+            var ws = new StreamReader(of.FileName);
+            while(!ws.EndOfStream)
+            {
+                x.Add(int.Parse(ws.ReadLine()));
+                y.Add(int.Parse(ws.ReadLine()));
+                LaserChanged.Add(ws.ReadLine());
+            }
+            
+            plot();
+        }
+
+        private void btn_clear_Click(object sender, EventArgs e)
+        {
+            LaserChanged.Clear();
+            LaserNum.Clear();
+            chart1.Series[0].Points.Clear();
+            chart1.Visible = false;
+            //chart1.ChartAreas.Clear();
+
+
+            //MessageBox.Show(cb1.Text);
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            chart1.Width = int.Parse(txt_Width.Text);
+            chart1.Height = int.Parse(txt_Height.Text);
+        }
+
+
+
+        //保存图片
+        private void btn_savejpg_Click(object sender, EventArgs e)
+        {
+            var savejpg = new SaveFileDialog();
+            savejpg.Filter = "(*.jpg)|*.jpg|(*.bmp)|*.bmp|(*.gif)|*.gif";
+            if(savejpg.ShowDialog()==DialogResult.OK)
+            {
+                chart1.SaveImage(savejpg.FileName,ChartImageFormat.Gif);
+                tst1.Text = "Save Success.";
+            }
+        }
+
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+
+            //chart1.Series[0].Color = Color.Black;
+            for (int i = 0; i < LaserChanged.Count; i++)
+            {
+                chart1.Series[0].Points[i].Color = Color.Black;
+            }
+
+            var mark = new Function();
+            Color[] color = { Color.Red, Color.Orange, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Violet, Color.LightBlue };
+
+            for (int i = 0; i < LaserChanged.Count; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    if (mark.hexToDec(LaserChanged[i]) >= j * 32+256 && mark.hexToDec(LaserChanged[i]) < (j + 1) * 32+256)
+                    {
+                        chart1.Series[0].Points[i].Color = color[j];
+                    }
+                    //if (mark.hexToDec(LaserChanged[i]) == j + 256)
+                    //{
+                    //    chart1.Series[0].Points[i].Color = color[j];
+                    //}
+                }
+
+
+            }
+        }
+
+        private void radioButton2_CheckedChanged(object sender, EventArgs e)
+        {
+            //chart1.Series[0].Color = Color.Black;
+
+
+            for (int i = 0; i < LaserChanged.Count; i++)
+            {
+                chart1.Series[0].Points[i].Color = Color.Black;
+            }
+            var mark = new Function();
+            Color[] color = { Color.Red, Color.Orange, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Violet, Color.LightBlue };
+
+            for (int i = 0; i < LaserChanged.Count; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    if (mark.hexToDec(LaserChanged[i]) >= j * 32 && mark.hexToDec(LaserChanged[i]) < (j + 1) * 32)
+                    {
+                        chart1.Series[0].Points[i].Color = color[j];
+                    }
+                    //if (mark.hexToDec(LaserChanged[i]) == j + 256)
+                    //{
+                    //    chart1.Series[0].Points[i].Color = color[j];
+                    //}
+                }
+
+
+            }
+        }
+    }
+}
